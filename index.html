@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>FIXSURE - Smart Service Platform</title>
+
+<style>
+body {
+    font-family: Arial;
+    margin: 0;
+    background: #f4f6f9;
+}
+
+header {
+    background: #1e2a38;
+    color: white;
+    padding: 15px;
+    text-align: center;
+}
+
+.container {
+    padding: 20px;
+}
+
+.card {
+    background: white;
+    padding: 20px;
+    margin: 15px 0;
+    border-radius: 10px;
+    box-shadow: 0px 2px 6px rgba(0,0,0,0.1);
+}
+
+input, select, button {
+    padding: 10px;
+    margin: 8px 0;
+    width: 100%;
+}
+
+button {
+    background: #007bff;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #0056b3;
+}
+
+.hidden {
+    display: none;
+}
+
+.status {
+    font-weight: bold;
+    color: green;
+}
+
+.track-box {
+    height: 120px;
+    background: #e9ecef;
+    position: relative;
+    overflow: hidden;
+}
+
+.dot {
+    width: 15px;
+    height: 15px;
+    background: red;
+    border-radius: 50%;
+    position: absolute;
+    top: 50px;
+    left: 0;
+    transition: 1s linear;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <h2>FIXSURE – On-Demand Home Service Platform</h2>
+</header>
+
+<div class="container">
+
+<!-- LOGIN -->
+<div class="card" id="loginBox">
+    <h3>Login with OTP</h3>
+    <input id="phone" placeholder="Enter Phone Number">
+    <button onclick="sendOTP()">Send OTP</button>
+
+    <div id="otpBox" class="hidden">
+        <input id="otp" placeholder="Enter OTP">
+        <button onclick="verifyOTP()">Verify</button>
+    </div>
+</div>
+
+<!-- ROLE SELECT -->
+<div class="card hidden" id="roleBox">
+    <h3>Select Role</h3>
+    <select id="role">
+        <option value="customer">Customer</option>
+        <option value="technician">Technician</option>
+        <option value="admin">Admin</option>
+    </select>
+    <button onclick="enterApp()">Enter System</button>
+</div>
+
+<!-- CUSTOMER DASHBOARD -->
+<div class="card hidden" id="customerDash">
+    <h3>Customer Dashboard</h3>
+
+    <input id="issue" placeholder="Enter Problem (e.g. switch not working)">
+    <button onclick="bookService()">Book Technician</button>
+
+    <p class="status" id="bookingStatus"></p>
+
+    <h4>Live Tracking</h4>
+    <div class="track-box">
+        <div class="dot" id="dot"></div>
+    </div>
+
+    <h4>Billing</h4>
+    <p id="bill"></p>
+</div>
+
+<!-- TECHNICIAN DASHBOARD -->
+<div class="card hidden" id="techDash">
+    <h3>Technician Panel</h3>
+    <p>New Job Assigned</p>
+    <button onclick="acceptJob()">Accept Job</button>
+    <button onclick="updateLocation()">Move Technician</button>
+</div>
+
+<!-- ADMIN -->
+<div class="card hidden" id="adminDash">
+    <h3>Admin Dashboard</h3>
+    <p>Total Bookings: <span id="count"></span></p>
+</div>
+
+</div>
+
+<script>
+
+let otpValue = "";
+let currentRole = "";
+let dotPosition = 0;
+let bookingActive = false;
+
+let booking = {
+    status: "none",
+    issue: "",
+    bill: null
+};
+
+/* OTP SYSTEM */
+function sendOTP() {
+    otpValue = Math.floor(1000 + Math.random() * 9000);
+    alert("OTP sent: " + otpValue);
+    document.getElementById("otpBox").classList.remove("hidden");
+}
+
+function verifyOTP() {
+    let userOtp = document.getElementById("otp").value;
+
+    if (userOtp == otpValue) {
+        alert("Login Successful");
+        document.getElementById("roleBox").classList.remove("hidden");
+    } else {
+        alert("Invalid OTP");
+    }
+}
+
+/* ENTER SYSTEM */
+function enterApp() {
+    currentRole = document.getElementById("role").value;
+
+    document.getElementById("loginBox").classList.add("hidden");
+    document.getElementById("roleBox").classList.add("hidden");
+
+    if (currentRole === "customer") {
+        document.getElementById("customerDash").classList.remove("hidden");
+    }
+
+    if (currentRole === "technician") {
+        document.getElementById("techDash").classList.remove("hidden");
+    }
+
+    if (currentRole === "admin") {
+        document.getElementById("adminDash").classList.remove("hidden");
+        document.getElementById("count").innerText = localStorage.getItem("count") || 0;
+    }
+}
+
+/* BOOK SERVICE */
+function bookService() {
+    booking.issue = document.getElementById("issue").value;
+    booking.status = "assigned";
+
+    document.getElementById("bookingStatus").innerText =
+        "Technician Assigned for: " + booking.issue;
+
+    bookingActive = true;
+    startTracking();
+
+    let count = localStorage.getItem("count") || 0;
+    localStorage.setItem("count", ++count);
+}
+
+/* TECH ACCEPT */
+function acceptJob() {
+    alert("Job Accepted by Technician");
+    booking.status = "on the way";
+}
+
+/* LIVE TRACKING */
+function startTracking() {
+    dotPosition = 0;
+
+    let interval = setInterval(() => {
+        if (!bookingActive) clearInterval(interval);
+
+        dotPosition += 10;
+        document.getElementById("dot").style.left = dotPosition + "px";
+
+        if (dotPosition >= 250) {
+            clearInterval(interval);
+
+            booking.status = "completed";
+
+            booking.bill = {
+                labour: 300,
+                material: 200,
+                total: 500
+            };
+
+            document.getElementById("bill").innerText =
+                "Labour: ₹300 | Material: ₹200 | Total: ₹500";
+
+            alert("Service Completed!");
+        }
+    }, 1000);
+}
+
+/* TECH MOVEMENT SIMULATION */
+function updateLocation() {
+    dotPosition += 20;
+    document.getElementById("dot").style.left = dotPosition + "px";
+}
+
+</script>
+
+</body>
+</html>
